@@ -1,14 +1,15 @@
-import type { Octokit } from '@octokit/core';
+import { Octokit } from 'octokit';
 
-export async function rankLanguagesForViewer(
-	octokit: Octokit
-): Promise<{ name: string; score: number }[]> {
+export async function rankLanguagesForViewer(octokit: Octokit): Promise<{
+	languages: { name: string; score: number }[];
+	max: number;
+}> {
 	const query = `
     query {
       viewer {
         repositories(
-          first: 96
-          ownerAffiliations: OWNER
+          first: 100
+          ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]
           isFork: false
           orderBy: { field: UPDATED_AT, direction: DESC }
         ) {
@@ -39,35 +40,47 @@ export async function rankLanguagesForViewer(
 		};
 	}>(query);
 
-	const totals: Record<string, number> = {};
+	const totals = new Map<string, number>();
 
 	for (const repo of result.viewer.repositories.nodes) {
-		const edges = repo.languages.edges;
-		const repoTotal = edges.reduce((sum, e) => sum + e.size, 0);
-		if (repoTotal === 0) continue;
+		let repoTotal = 0;
+		const repoCounts = new Map<string, number>();
 
-		for (const edge of edges) {
-			const name = edge.node.name;
+		for (const edge of repo.languages.edges) {
+			let name = edge.node.name;
 
-			if (name == 'HTML' || name == 'CSS') {
-				continue;
-			}
+			if (['RenderScript', 'Dockerfile', 'Shell', 'Rich Text Format'].includes(name)) continue;
+			if (name === 'Sass' || name === 'SCSS') name = 'Sass/SCSS';
 
-			const normalized = edge.size / repoTotal;
-			totals[name] = (totals[name] ?? 0) + normalized;
+			repoCounts.set(name, (repoCounts.get(name) ?? 0) + edge.size);
+			repoTotal += edge.size;
+		}
+
+		for (const [name, size] of repoCounts) {
+			const percentage = (size / repoTotal) * 100;
+			totals.set(name, (totals.get(name) ?? 0) + percentage);
 		}
 	}
 
-	const ranking = Object.entries(totals)
+	const ranking = Array.from(totals.entries())
 		.map(([name, score]) => ({ name, score }))
 		.sort((a, b) => b.score - a.score)
-		.slice(0, 12);
+		.slice(0, 15);
 
 	const sum = ranking.reduce((a, { score }) => a + score, 0);
 
-	for (const [index, { score }] of ranking.entries()) {
-		ranking[index].score = (score / sum) * 100.0;
+	for (let i = 0; i < ranking.length; i++) {
+		ranking[i].score = Math.log10(ranking[i].score + 1);
 	}
 
-	return ranking;
+	const max = Math.log10(sum + 1);
+
+	for (let i = 0; i < ranking.length; i++) {
+		ranking[i].score = ranking[i].score / max;
+	}
+
+	return {
+		languages: ranking,
+		max
+	};
 }

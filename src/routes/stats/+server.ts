@@ -8,11 +8,12 @@ import { rankLanguagesForViewer } from '$lib/utils/rankLanguagesForUser';
 export const GET: RequestHandler = async () => {
 	const octokit = new Octokit({ auth: SECRET_GITHUB_API_KEY });
 
-	const languages = await rankLanguagesForViewer(octokit);
+	const { languages, max } = await rankLanguagesForViewer(octokit);
 
 	const result = render(StatsSvg, {
 		props: {
-			languages
+			languages,
+			max
 		}
 	});
 

@@ -1,14 +1,11 @@
 import { Octokit } from 'octokit';
 
-export async function rankLanguagesForViewer(octokit: Octokit): Promise<{
-	languages: { name: string; score: number }[];
-	max: number;
-}> {
+export async function rankLanguagesForViewer(octokit: Octokit): Promise<{ name: string; score: number }[]> {
 	const query = `
     query {
       viewer {
         repositories(
-          first: 100
+          first: 48
           ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]
           isFork: false
           orderBy: { field: UPDATED_AT, direction: DESC }
@@ -79,8 +76,5 @@ export async function rankLanguagesForViewer(octokit: Octokit): Promise<{
 		ranking[i].score = ranking[i].score / max;
 	}
 
-	return {
-		languages: ranking,
-		max
-	};
+	return ranking;
 }

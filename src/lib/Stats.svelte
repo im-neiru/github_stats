@@ -1,8 +1,8 @@
 <script lang="ts">
 	type Language = { name: string; score: number };
-	type Props = { languages: Language[]; max: number };
+	type Props = { languages: Language[] };
 
-	const { languages, max }: Props = $props();
+	const { languages }: Props = $props();
 
 	const size = 400;
 	const cx = size / 2;
@@ -27,7 +27,9 @@
 		['HTML', '#fca775'],
 		['Dart', '#55ecda'],
 		['CMake', '#fc75ad'],
-		['CSS', '#7461ec']
+		['CSS', '#7461ec'],
+		['Slang', '#5b8fff'],
+		['WGSL', '#53058b']
 		// add more later
 	]);
 

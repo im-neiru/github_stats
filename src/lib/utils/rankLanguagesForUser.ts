@@ -1,6 +1,8 @@
 import { Octokit } from 'octokit';
 
-export async function rankLanguagesForViewer(octokit: Octokit): Promise<{ name: string; score: number }[]> {
+export async function rankLanguagesForViewer(
+	octokit: Octokit
+): Promise<{ name: string; score: number }[]> {
 	const query = `
     query {
       viewer {
